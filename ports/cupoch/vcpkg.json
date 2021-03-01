@@ -1,0 +1,23 @@
+{
+  "name": "cupoch",
+  "version-string": "v0.1.4.1",
+  "homepage": "https://github.com/soroush/cupoch",
+  "description": "Robotics with GPU computing",
+  "dependencies": [
+    "cuda", 
+    "cnmem", 
+    "dlpack", 
+    "eigen3", 
+    "fmt", 
+    "jsoncpp", 
+    "libvh", 
+    "libjpeg-turbo", 
+    "libpng", 
+    "rply", 
+    "stdgpu", 
+    "tinyobjloader", 
+    "zlib"
+  ],
+
+  "default-features": []
+}
