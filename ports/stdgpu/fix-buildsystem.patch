@@ -1,0 +1,509 @@
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 991d5c1..e30385d 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -1,11 +1,9 @@
+-cmake_minimum_required(VERSION 3.15...3.17)
+-
++cmake_minimum_required(VERSION 3.17)
+ 
+ project(stdgpu VERSION 1.3.0
+                DESCRIPTION "Efficient STL-like Data Structures on the GPU"
+                LANGUAGES CXX)
+ 
+-
+ set(STDGPU_BACKEND_CUDA "STDGPU_BACKEND_CUDA")
+ set(STDGPU_BACKEND_OPENMP "STDGPU_BACKEND_OPENMP")
+ set(STDGPU_BACKEND_HIP "STDGPU_BACKEND_HIP")
+@@ -23,131 +21,21 @@ string(REGEX REPLACE "^STDGPU_BACKEND_" "" STDGPU_BACKEND_DIRECTORY ${STDGPU_BAC
+ string(TOLOWER ${STDGPU_BACKEND_DIRECTORY} STDGPU_BACKEND_DIRECTORY)
+ 
+ # STDGPU_BACKEND_NAMESPACE
++# TODO: Parametrize this
+ set(STDGPU_BACKEND_NAMESPACE ${STDGPU_BACKEND_DIRECTORY})
+ 
+ # STDGPU_BACKEND_MACRO_NAMESPACE
+ set(STDGPU_BACKEND_MACRO_NAMESPACE ${STDGPU_BACKEND_NAMESPACE})
+ string(TOUPPER ${STDGPU_BACKEND_MACRO_NAMESPACE} STDGPU_BACKEND_MACRO_NAMESPACE)
+ 
+-
+ # Enable backend-specific languages
+ if(STDGPU_BACKEND STREQUAL STDGPU_BACKEND_CUDA)
+     enable_language(CUDA)
+ endif()
+ 
+-
+-# Backend-specific modules have higher priority than generic modules
+-list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake/${STDGPU_BACKEND_DIRECTORY}")
+-list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/cmake")
+-
+-
+-if(CMAKE_SOURCE_DIR STREQUAL CMAKE_CURRENT_SOURCE_DIR)
+-    set(STDGPU_SETUP_COMPILER_FLAGS_DEFAULT ON)
+-else()
+-    set(STDGPU_SETUP_COMPILER_FLAGS_DEFAULT OFF)
+-endif()
++# Options
+ option(STDGPU_SETUP_COMPILER_FLAGS "Constructs the compiler flags, default: ON if standalone, OFF if included via add_subdirectory" ${STDGPU_SETUP_COMPILER_FLAGS_DEFAULT})
+ option(STDGPU_TREAT_WARNINGS_AS_ERRORS "Treats compiler warnings as errors, default: OFF" OFF)
+-
+-if(STDGPU_SETUP_COMPILER_FLAGS)
+-    include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/${STDGPU_BACKEND_DIRECTORY}/set_device_flags.cmake")
+-    stdgpu_set_device_flags(STDGPU_DEVICE_FLAGS)
+-    stdgpu_set_test_device_flags(STDGPU_TEST_DEVICE_FLAGS)
+-    message(STATUS "Created device flags : ${STDGPU_DEVICE_FLAGS}")
+-    message(STATUS "Created test device flags : ${STDGPU_TEST_DEVICE_FLAGS}")
+-
+-    if(STDGPU_BACKEND STREQUAL STDGPU_BACKEND_CUDA)
+-        # FIXME Use the architecture flags for both device compiling and device linking until there is a proper abstraction
+-        stdgpu_cuda_set_architecture_flags(STDGPU_DEVICE_COMPILE_AND_LINK_FLAGS)
+-        string(APPEND CMAKE_CUDA_FLAGS "${STDGPU_DEVICE_COMPILE_AND_LINK_FLAGS}")
+-        message(STATUS "Building with modified CMAKE_CUDA_FLAGS : ${CMAKE_CUDA_FLAGS}")
+-    endif()
+-
+-    include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/set_host_flags.cmake")
+-    stdgpu_set_host_flags(STDGPU_HOST_FLAGS)
+-    stdgpu_set_test_host_flags(STDGPU_TEST_HOST_FLAGS)
+-    message(STATUS "Created host flags : ${STDGPU_HOST_FLAGS}")
+-    message(STATUS "Created test host flags : ${STDGPU_TEST_HOST_FLAGS}")
+-endif()
+-
+-
+-option(STDGPU_ANALYZE_WITH_CLANG_TIDY "Analyzes the code with clang-tidy, default: OFF" OFF)
+-if(STDGPU_ANALYZE_WITH_CLANG_TIDY)
+-    include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/setup_clang_tidy.cmake")
+-    stdgpu_setup_clang_tidy(STDGPU_PROPERTY_CLANG_TIDY)
+-endif()
+-
+-option(STDGPU_ANALYZE_WITH_CPPCHECK "Analyzes the code with cppcheck, default: OFF" OFF)
+-if(STDGPU_ANALYZE_WITH_CPPCHECK)
+-    include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/setup_cppcheck.cmake")
+-    stdgpu_setup_cppcheck(STDGPU_PROPERTY_CPPCHECK)
+-endif()
+-
+-
+-# Setup install paths
+-set(STDGPU_LIB_INSTALL_DIR "lib")
+-set(STDGPU_BIN_INSTALL_DIR "bin")
+-set(STDGPU_INCLUDE_INSTALL_DIR "include")
+-set(STDGPU_CMAKE_INSTALL_DIR "lib/cmake/stdgpu")
+-set(STDGPU_DOC_INSTALL_DIR "doc/stdgpu")
+-
+ option(STDGPU_BUILD_SHARED_LIBS "Builds the project as a shared library, if set to ON, or as a static library, if set to OFF, default: BUILD_SHARED_LIBS" ${BUILD_SHARED_LIBS})
+ 
+-add_subdirectory(src)
+-
+-add_subdirectory(doc)
+-
+-
+-# Install exported targets and cmake files
+-install(EXPORT stdgpu-targets
+-        NAMESPACE stdgpu::
+-        DESTINATION "${STDGPU_CMAKE_INSTALL_DIR}"
+-        COMPONENT stdgpu)
+-
+-include(CMakePackageConfigHelpers)
+-configure_package_config_file("${CMAKE_CURRENT_SOURCE_DIR}/cmake/stdgpu-config.cmake.in"
+-                              "${CMAKE_CURRENT_BINARY_DIR}/stdgpu-config.cmake"
+-                              INSTALL_DESTINATION ${STDGPU_CMAKE_INSTALL_DIR}
+-                              PATH_VARS STDGPU_INCLUDE_INSTALL_DIR)
+-
+-write_basic_package_version_file("${CMAKE_CURRENT_BINARY_DIR}/stdgpu-config-version.cmake"
+-                                 VERSION ${stdgpu_VERSION}
+-                                 COMPATIBILITY SameMajorVersion)
+-
+-install(FILES "${CMAKE_CURRENT_BINARY_DIR}/stdgpu-config.cmake"
+-              "${CMAKE_CURRENT_BINARY_DIR}/stdgpu-config-version.cmake"
+-        DESTINATION "${STDGPU_CMAKE_INSTALL_DIR}"
+-        COMPONENT stdgpu)
+-
+-
+-option(STDGPU_BUILD_EXAMPLES "Build the examples, default: ON" ON)
+-if(STDGPU_BUILD_EXAMPLES)
+-    enable_testing()
+-    add_subdirectory(examples)
+-endif()
+-
+-option(STDGPU_BUILD_TESTS "Build the unit tests, default: ON" ON)
+-option(STDGPU_BUILD_TEST_COVERAGE "Build a test coverage report, default: OFF" OFF)
+-if(STDGPU_BUILD_TESTS)
+-    enable_testing()
+-
+-    if(STDGPU_BUILD_TEST_COVERAGE)
+-        include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/code_coverage.cmake")
+-        append_coverage_compiler_flags()
+-        set(COVERAGE_EXCLUDES '*CMake*' '*external/*' '*test/*' '/usr/*')
+-    endif()
+-
+-    add_subdirectory(test)
+-
+-    if(STDGPU_BUILD_TEST_COVERAGE)
+-        string(TOLOWER ${CMAKE_BUILD_TYPE} STDGPU_SCRIPT_BUILD_TYPE)
+-        setup_target_for_coverage(NAME stdgpu_coverage
+-                                  EXECUTABLE ${CMAKE_COMMAND} -E chdir .. sh scripts/run_tests_${STDGPU_SCRIPT_BUILD_TYPE}.sh
+-                                  DEPENDENCIES teststdgpu)
+-    endif()
+-
+-endif()
+-
+-include("${CMAKE_CURRENT_SOURCE_DIR}/cmake/config_summary.cmake")
+-stdgpu_print_configuration_summary()
+-
++add_subdirectory(src)
+\ No newline at end of file
+diff --git a/src/CMakeLists.txt b/src/CMakeLists.txt
+index 2c8ce6b..133b058 100644
+--- a/src/CMakeLists.txt
++++ b/src/CMakeLists.txt
+@@ -1 +1 @@
+-add_subdirectory(stdgpu)
++add_subdirectory(stdgpu)
+\ No newline at end of file
+diff --git a/src/stdgpu/CMakeLists.txt b/src/stdgpu/CMakeLists.txt
+index 3e1155c..4dbfcb9 100644
+--- a/src/stdgpu/CMakeLists.txt
++++ b/src/stdgpu/CMakeLists.txt
+@@ -1,23 +1,106 @@
++# # Setup dependencies
++# find_package(thrust 1.9.2 REQUIRED MODULE)
+ 
+-set(STDGPU_INCLUDE_LOCAL_DIR "${CMAKE_CURRENT_LIST_DIR}/..")
+-set(STDGPU_BUILD_INCLUDE_DIR "${CMAKE_CURRENT_BINARY_DIR}/include")
+-set(STDGPU_BUILD_CMAKE_DIR "${CMAKE_CURRENT_BINARY_DIR}/cmake")
++# set(STDGPU_DEPENDENCIES_INIT "
++# find_dependency(thrust 1.9.2 REQUIRED MODULE)
++# ")
+ 
+-# Setup dependencies
+-find_package(thrust 1.9.2 REQUIRED MODULE)
+ 
+-set(STDGPU_DEPENDENCIES_INIT "
+-find_dependency(thrust 1.9.2 REQUIRED MODULE)
+-")
++# # Setup library options and config file
++# if(CMAKE_BUILD_TYPE MATCHES "Release" OR CMAKE_BUILD_TYPE MATCHES "MinSizeRel")
++#     set(STDGPU_ENABLE_CONTRACT_CHECKS_DEFAULT OFF)
++# else()
++#     set(STDGPU_ENABLE_CONTRACT_CHECKS_DEFAULT ON)
++# endif()
+ 
++# option(STDGPU_ENABLE_AUXILIARY_ARRAY_WARNING "Enable warnings when auxiliary arrays are allocated in memory API (deprecated), default: OFF" OFF)
++# option(STDGPU_ENABLE_CONTRACT_CHECKS "Enable contract checks, default: OFF if CMAKE_BUILD_TYPE is Release or MinSizeRel, ON otherwise" ${STDGPU_ENABLE_CONTRACT_CHECKS_DEFAULT})
++# option(STDGPU_ENABLE_MANAGED_ARRAY_WARNING "Enable warnings when managed memory is initialized on the host side but should be on device in memory API (deprecated), default: OFF" OFF)
++# option(STDGPU_USE_32_BIT_INDEX "Use 32-bit instead of 64-bit signed integer for index_t, default: ON" ON)
++# option(STDGPU_USE_FAST_DESTROY "Use fast destruction of allocated arrays (filled with a default value) by omitting destructor calls in memory API (deprecated), default: OFF" OFF)
++# option(STDGPU_USE_FIBONACCI_HASHING "Use Fibonacci Hashing instead of Modulo to compute hash bucket indices (deprecated), default: ON" ON)
+ 
+-# Setup library options and config file
+-if(CMAKE_BUILD_TYPE MATCHES "Release" OR CMAKE_BUILD_TYPE MATCHES "MinSizeRel")
+-    set(STDGPU_ENABLE_CONTRACT_CHECKS_DEFAULT OFF)
+-else()
+-    set(STDGPU_ENABLE_CONTRACT_CHECKS_DEFAULT ON)
+-endif()
++# configure_file("${STDGPU_INCLUDE_LOCAL_DIR}/stdgpu/config.h.in"
++#                "${STDGPU_BUILD_INCLUDE_DIR}/stdgpu/config.h"
++#                @ONLY)
+ 
++
++# # FIXME:
++# # The ROCm HCC compiler/linker seems to have trouble with template specializations.
++# # While there are linker errors for STATIC libraries, SHARED libraries seem to work/link for some reason.
++# if(STDGPU_BACKEND STREQUAL STDGPU_BACKEND_HIP)
++#     message(WARNING "STDGPU_HIP_BACKEND: Building SHARED library to workaround linker errors with template specializations. This might be a bug in ROCm's HCC compiler/linker.")
++#     add_library(stdgpu SHARED)
++# else()
++#     if(STDGPU_BUILD_SHARED_LIBS)
++#         add_library(stdgpu SHARED)
++#     else()
++#         add_library(stdgpu STATIC)
++#     endif()
++# endif()
++
++# target_sources(stdgpu PRIVATE impl/iterator.cpp
++#                               impl/memory.cpp
++#                               impl/limits.cpp)
++
++# target_include_directories(stdgpu PUBLIC
++#                                   $<BUILD_INTERFACE:${STDGPU_INCLUDE_LOCAL_DIR}>
++#                                   $<BUILD_INTERFACE:${STDGPU_BUILD_INCLUDE_DIR}>
++#                                   $<INSTALL_INTERFACE:${STDGPU_INCLUDE_INSTALL_DIR}>)
++
++# target_compile_features(stdgpu PUBLIC cxx_std_14)
++
++# target_compile_options(stdgpu PRIVATE ${STDGPU_DEVICE_FLAGS}
++#                                       ${STDGPU_HOST_FLAGS})
++
++# target_link_libraries(stdgpu PUBLIC thrust::thrust)
++
++# set_target_properties(stdgpu PROPERTIES CXX_CLANG_TIDY "${STDGPU_PROPERTY_CLANG_TIDY}")
++# set_target_properties(stdgpu PROPERTIES CXX_CPPCHECK "${STDGPU_PROPERTY_CPPCHECK}")
++
++# add_library(stdgpu::stdgpu ALIAS stdgpu)
++
++
++# add_subdirectory(${STDGPU_BACKEND_DIRECTORY})
++
++
++# # Export targets and install header files
++# # Installation
++# include(GNUInstallDirs)
++# install(TARGETS stdgpu
++#         EXPORT stdgpu-targets
++#         LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
++#         ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
++#         RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
++#         PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/stdgpu/
++#         COMPONENT stdgpu)
++
++# install(DIRECTORY "${STDGPU_INCLUDE_LOCAL_DIR}/" "${STDGPU_BUILD_INCLUDE_DIR}/"
++#         DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}"
++#         COMPONENT stdgpu
++#         FILES_MATCHING
++#         PATTERN "*.h"
++#         PATTERN "*.cuh"
++#         PATTERN "*_fwd")
++
++# # Install dependencies file and custom thrust module
++# configure_file("${stdgpu_SOURCE_DIR}/cmake/stdgpu-dependencies.cmake.in"
++#                "${STDGPU_BUILD_CMAKE_DIR}/stdgpu-dependencies.cmake"
++#                @ONLY)
++
++# install(FILES "${STDGPU_BUILD_CMAKE_DIR}/stdgpu-dependencies.cmake"
++#         DESTINATION "${STDGPU_CMAKE_INSTALL_DIR}"
++#         COMPONENT stdgpu)
++
++# install(FILES "${stdgpu_SOURCE_DIR}/cmake/Findthrust.cmake"
++#         DESTINATION "${STDGPU_CMAKE_INSTALL_DIR}"
++#         COMPONENT stdgpu)
++
++cmake_minimum_required(VERSION 3.16.0)
++
++project(stdgpu LANGUAGES CXX)
++
++# Options
+ option(STDGPU_ENABLE_AUXILIARY_ARRAY_WARNING "Enable warnings when auxiliary arrays are allocated in memory API (deprecated), default: OFF" OFF)
+ option(STDGPU_ENABLE_CONTRACT_CHECKS "Enable contract checks, default: OFF if CMAKE_BUILD_TYPE is Release or MinSizeRel, ON otherwise" ${STDGPU_ENABLE_CONTRACT_CHECKS_DEFAULT})
+ option(STDGPU_ENABLE_MANAGED_ARRAY_WARNING "Enable warnings when managed memory is initialized on the host side but should be on device in memory API (deprecated), default: OFF" OFF)
+@@ -25,73 +108,78 @@ option(STDGPU_USE_32_BIT_INDEX "Use 32-bit instead of 64-bit signed integer for
+ option(STDGPU_USE_FAST_DESTROY "Use fast destruction of allocated arrays (filled with a default value) by omitting destructor calls in memory API (deprecated), default: OFF" OFF)
+ option(STDGPU_USE_FIBONACCI_HASHING "Use Fibonacci Hashing instead of Modulo to compute hash bucket indices (deprecated), default: ON" ON)
+ 
+-configure_file("${STDGPU_INCLUDE_LOCAL_DIR}/stdgpu/config.h.in"
+-               "${STDGPU_BUILD_INCLUDE_DIR}/stdgpu/config.h"
++# Configuration
++configure_file("config.h.in"
++               "${CMAKE_CURRENT_SOURCE_DIR}/config.h"
+                @ONLY)
+ 
++set(CMAKE_CXX_STANDARD 17)
++
++# Check for dependencies
++find_package(CUDA REQUIRED)
++find_path(THRUST_INCLUDE_DIRS "thrust/addressof.h")
++
++enable_language("CUDA")
++include_directories(${CUDA_INCLUDE_DIRS})
++link_directories(${CUDA_LIBRARY_DIRS})
++set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS}
++    --no-host-device-move-forward
++    --expt-relaxed-constexpr
++    --expt-extended-lambda
++    --default-stream per-thread
++    # --use_fast_math
++#     -Xcudafe "--diag_suppress=integer_sign_change"
++#     -Xcudafe "--diag_suppress=partial_override"
++#     -Xcudafe "--diag_suppress=virtual_function_decl_hidden"
++)
+ 
+-# FIXME:
+-# The ROCm HCC compiler/linker seems to have trouble with template specializations.
+-# While there are linker errors for STATIC libraries, SHARED libraries seem to work/link for some reason.
+-if(STDGPU_BACKEND STREQUAL STDGPU_BACKEND_HIP)
+-    message(WARNING "STDGPU_HIP_BACKEND: Building SHARED library to workaround linker errors with template specializations. This might be a bug in ROCm's HCC compiler/linker.")
+-    add_library(stdgpu SHARED)
+-else()
+-    if(STDGPU_BUILD_SHARED_LIBS)
+-        add_library(stdgpu SHARED)
+-    else()
+-        add_library(stdgpu STATIC)
+-    endif()
+-endif()
++# Define the library
++# General Source file
++file(GLOB_RECURSE ALL_SOURCE_FILES "impl/*.cpp" "cuda/impl/*.cu")
+ 
+-target_sources(stdgpu PRIVATE impl/iterator.cpp
+-                              impl/memory.cpp
+-                              impl/limits.cpp)
++cuda_add_library(${PROJECT_NAME} STATIC ${ALL_SOURCE_FILES})
+ 
+-target_include_directories(stdgpu PUBLIC
+-                                  $<BUILD_INTERFACE:${STDGPU_INCLUDE_LOCAL_DIR}>
+-                                  $<BUILD_INTERFACE:${STDGPU_BUILD_INCLUDE_DIR}>
+-                                  $<INSTALL_INTERFACE:${STDGPU_INCLUDE_INSTALL_DIR}>)
++set_property(TARGET ${PROJECT_NAME} PROPERTY CUDA_ARCHITECTURES 35)
++#set_target_properties(${PROJECT_NAME} PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
+ 
+-target_compile_features(stdgpu PUBLIC cxx_std_14)
++target_compile_options(${PROJECT_NAME} PRIVATE ${STDGPU_DEVICE_FLAGS} ${STDGPU_HOST_FLAGS})
+ 
+-target_compile_options(stdgpu PRIVATE ${STDGPU_DEVICE_FLAGS}
+-                                      ${STDGPU_HOST_FLAGS})
++target_include_directories(${PROJECT_NAME}
++    PUBLIC $<INSTALL_INTERFACE:include> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../>
++    PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/
++)
+ 
+-target_link_libraries(stdgpu PUBLIC thrust::thrust)
++#target_link_libraries(${PROJECT_NAME} thrust::thrust)
+ 
+-set_target_properties(stdgpu PROPERTIES CXX_CLANG_TIDY "${STDGPU_PROPERTY_CLANG_TIDY}")
+-set_target_properties(stdgpu PROPERTIES CXX_CPPCHECK "${STDGPU_PROPERTY_CPPCHECK}")
++# Installation
++# Add 'd' suffix to debug builds
++set_property(TARGET ${PROJECT_NAME} PROPERTY DEBUG_POSTFIX d)
+ 
+-add_library(stdgpu::stdgpu ALIAS stdgpu)
++# Installation
++include(GNUInstallDirs)
+ 
++file(GLOB_RECURSE ALL_HEADER_FILES "*.h" "*.cuh" "*_fwd" "cuda/*.cuh" "cuda/*.h")
+ 
+-add_subdirectory(${STDGPU_BACKEND_DIRECTORY})
++set_target_properties(${PROJECT_NAME} PROPERTIES PUBLIC_HEADER "${ALL_HEADER_FILES}")
+ 
++export(TARGETS ${PROJECT_NAME} FILE "${PROJECT_NAME}Config.cmake")
+ 
+-# Export targets and install header files
+-install(TARGETS stdgpu
+-        EXPORT stdgpu-targets
+-        DESTINATION "${STDGPU_LIB_INSTALL_DIR}"
+-        COMPONENT stdgpu)
++install(TARGETS ${PROJECT_NAME}
++    EXPORT "${PROJECT_NAME}Config"
++    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
++    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
++    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
++    #PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/stdgpu
++)
+ 
+-install(DIRECTORY "${STDGPU_INCLUDE_LOCAL_DIR}/" "${STDGPU_BUILD_INCLUDE_DIR}/"
+-        DESTINATION "${STDGPU_INCLUDE_INSTALL_DIR}"
+-        COMPONENT stdgpu
++install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
++        DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}"
+         FILES_MATCHING
+         PATTERN "*.h"
+         PATTERN "*.cuh"
+         PATTERN "*_fwd")
+ 
+-# Install dependencies file and custom thrust module
+-configure_file("${stdgpu_SOURCE_DIR}/cmake/stdgpu-dependencies.cmake.in"
+-               "${STDGPU_BUILD_CMAKE_DIR}/stdgpu-dependencies.cmake"
+-               @ONLY)
+-
+-install(FILES "${STDGPU_BUILD_CMAKE_DIR}/stdgpu-dependencies.cmake"
+-        DESTINATION "${STDGPU_CMAKE_INSTALL_DIR}"
+-        COMPONENT stdgpu)
+-
+-install(FILES "${stdgpu_SOURCE_DIR}/cmake/Findthrust.cmake"
+-        DESTINATION "${STDGPU_CMAKE_INSTALL_DIR}"
+-        COMPONENT stdgpu)
++install(EXPORT "${PROJECT_NAME}Config"
++    FILE "${PROJECT_NAME}Config.cmake"
++    DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/
++)
+diff --git a/src/stdgpu/cuda/CMakeLists.txt b/src/stdgpu/cuda/CMakeLists.txt
+deleted file mode 100644
+index d607c02..0000000
+--- a/src/stdgpu/cuda/CMakeLists.txt
++++ /dev/null
+@@ -1,20 +0,0 @@
+-
+-find_package(CUDAToolkit 10.0 REQUIRED MODULE)
+-
+-set(STDGPU_DEPENDENCIES_BACKEND_INIT "
+-find_dependency(CUDAToolkit 10.0 REQUIRED MODULE)
+-" PARENT_SCOPE)
+-
+-target_sources(stdgpu PRIVATE impl/memory.cpp
+-                              impl/bitset.cu
+-                              impl/mutex.cu)
+-
+-target_compile_definitions(stdgpu PUBLIC THRUST_DEVICE_SYSTEM=THRUST_DEVICE_SYSTEM_CUDA)
+-
+-target_link_libraries(stdgpu PUBLIC CUDA::cudart)
+-
+-
+-# Install custom CUDA module
+-install(FILES "${stdgpu_SOURCE_DIR}/cmake/${STDGPU_BACKEND_DIRECTORY}/FindCUDAToolkit.cmake"
+-        DESTINATION "${STDGPU_CMAKE_INSTALL_DIR}/${STDGPU_BACKEND_DIRECTORY}"
+-        COMPONENT stdgpu)
+diff --git a/src/stdgpu/cuda/impl/atomic_detail.cuh b/src/stdgpu/cuda/impl/atomic_detail.cuh
+index 8edf30e..97a152b 100644
+--- a/src/stdgpu/cuda/impl/atomic_detail.cuh
++++ b/src/stdgpu/cuda/impl/atomic_detail.cuh
+@@ -17,7 +17,7 @@
+ #define STDGPU_CUDA_ATOMIC_DETAIL_H
+ 
+ #include <stdgpu/algorithm.h>
+-#include <stdgpu/limits.h>
++#include <stdgpu/stdgpu-limits.h>
+ #include <stdgpu/platform.h>
+ 
+ 
+diff --git a/src/stdgpu/impl/bit_detail.h b/src/stdgpu/impl/bit_detail.h
+index 0d342ce..1e0078a 100644
+--- a/src/stdgpu/impl/bit_detail.h
++++ b/src/stdgpu/impl/bit_detail.h
+@@ -23,7 +23,7 @@
+     #undef STDGPU_BACKEND_BIT_HEADER
+ #endif
+ #include <stdgpu/contract.h>
+-#include <stdgpu/limits.h>
++#include <stdgpu/stdgpu-limits.h>
+ 
+ 
+ 
+diff --git a/src/stdgpu/impl/limits.cpp b/src/stdgpu/impl/limits.cpp
+index e48794a..5ca4797 100644
+--- a/src/stdgpu/impl/limits.cpp
++++ b/src/stdgpu/impl/limits.cpp
+@@ -13,7 +13,7 @@
+  *  limitations under the License.
+  */
+ 
+-#include <stdgpu/limits.h>
++#include <stdgpu/stdgpu-limits.h>
+ 
+ 
+ 
+diff --git a/src/stdgpu/impl/memory_detail.h b/src/stdgpu/impl/memory_detail.h
+index be61e10..1a16dc9 100644
+--- a/src/stdgpu/impl/memory_detail.h
++++ b/src/stdgpu/impl/memory_detail.h
+@@ -23,7 +23,7 @@
+ #include <stdgpu/attribute.h>
+ #include <stdgpu/cstddef.h>
+ #include <stdgpu/iterator.h>
+-#include <stdgpu/limits.h>
++#include <stdgpu/stdgpu-limits.h>
+ #include <stdgpu/platform.h>
+ #include <stdgpu/utility.h>
+ 
+diff --git a/src/stdgpu/limits.h b/src/stdgpu/stdgpu-limits.h
+similarity index 99%
+rename from src/stdgpu/limits.h
+rename to src/stdgpu/stdgpu-limits.h
+index 8892b00..c687948 100644
+--- a/src/stdgpu/limits.h
++++ b/src/stdgpu/stdgpu-limits.h
+@@ -32,8 +32,6 @@
+ #include <stdgpu/compiler.h>
+ #include <stdgpu/platform.h>
+ 
+-
+-
+ namespace stdgpu
+ {
+ 
