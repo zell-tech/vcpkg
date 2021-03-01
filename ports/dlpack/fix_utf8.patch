@@ -1,0 +1,13 @@
+﻿diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 85f1b6d..288a97f 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -78,7 +78,7 @@ endif()
+ # * CMAKE_INSTALL_INCLUDEDIR
+ include(GNUInstallDirs)
+ 
+-set(config_install_dir "${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME}")
++set(config_install_dir "${CMAKE_INSTALL_LIBDIR}/cmake/")
+ set(generated_dir "${CMAKE_CURRENT_BINARY_DIR}/generated")
+ set(version_config "${generated_dir}/${PROJECT_NAME}ConfigVersion.cmake")
+ set(project_config "${generated_dir}/${PROJECT_NAME}Config.cmake")
