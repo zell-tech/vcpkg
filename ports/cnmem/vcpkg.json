@@ -1,0 +1,9 @@
+{
+  "name": "cnmem",
+  "version-string": "1.0.0",
+  "homepage": "https://github.com/NVIDIA/cnmem",
+  "description": "Simple library to help the Deep Learning frameworks manage CUDA memory.",
+  "dependencies": [],
+
+  "default-features": []
+}
