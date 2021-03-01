@@ -141,6 +141,8 @@ vcpkg_from_github(
         # Remove these 2 official patches in the next update
         ${QT_NO_KEYWORDS_PATCH}
         0002-Qt-enforce-QT_NO_KEYWORDS-builds-by-VTK-itself.patch
+        pegtl-01.patch # Enable multiple calls to find_package(VTK) in subdirectories
+        FindLZ4-01.patch # Enable multiple calls to find_package(VTK) in subdirectories
 )
 
 # =============================================================================
@@ -176,6 +178,17 @@ vcpkg_configure_cmake(
         # Select modules / groups to install
         -DVTK_USE_EXTERNAL:BOOL=ON
         -DVTK_MODULE_USE_EXTERNAL_VTK_gl2ps:BOOL=OFF # Not yet in VCPKG
+        # Disable problematic dependencies
+        # -DVTK_MODULE_USE_EXTERNAL_VTK_hdf5:BOOL=OFF
+        # -DVTK_MODULE_USE_EXTERNAL_VTK_pegtl:BOOL=OFF
+        # -DVTK_MODULE_USE_EXTERNAL_VTK_lzma:BOOL=OFF
+        # -DVTK_MODULE_USE_EXTERNAL_VTK_lz4:BOOL=OFF
+        # -DVTK_MODULE_ENABLE_VTK_pegtl=NO
+        # -DVTK_MODULE_ENABLE_VTK_hdf5=NO
+        # -DVTK_MODULE_ENABLE_VTK_lzma=NO
+        # -DVTK_MODULE_ENABLE_VTK_lz4=NO
+        # -DVTK_MODULE_ENABLE_VTK_xdmf2=NO
+        # -DVTK_MODULE_ENABLE_VTK_IOXdmf2=NO
         ${ADDITIONAL_OPTIONS}
 )
 
@@ -287,7 +300,7 @@ file(REMOVE_RECURSE ${CURRENT_PACKAGES_DIR}/debug/share)
 vcpkg_copy_tool_dependencies("${CURRENT_PACKAGES_DIR}/tools/vtk")
 
 ## Files Modules needed by ParaView
-if("paraview" IN_LIST FEATURES)
+if("paraview" IN_LIST FEATURES OR "qt" IN_LIST FEATURES)
     set(VTK_CMAKE_NEEDED vtkCompilerChecks vtkCompilerPlatformFlags vtkCompilerExtraFlags vtkInitializeBuildType
                          vtkSupportMacros vtkDirectories vtkVersion FindPythonModules vtkModuleDebugging vtkExternalData)
     foreach(module ${VTK_CMAKE_NEEDED})

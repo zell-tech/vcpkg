@@ -1,5 +1,7 @@
 #The original VTK file is overdoing it and still prdouces errors that the target hdf5::hdf5_hl-shared cannot be found in dynamic builds
 find_package(hdf5 QUIET NO_MODULE)
+if(NOT TARGET hdf5::hdf5)
+
 if(TARGET hdf5::hdf5-shared)
   set_target_properties(hdf5::hdf5-shared PROPERTIES IMPORTED_GLOBAL TRUE)
   add_library(hdf5::hdf5 ALIAS hdf5::hdf5-shared)
@@ -21,3 +23,5 @@ endif()
 set(HDF5_IS_PARALLEL ${HDF5_ENABLE_PARALLEL} CACHE BOOL "" FORCE)
 set(HDF5_FOUND ON CACHE BOOL "" FORCE)
 set(hdf5_FOUND ON CACHE BOOL "" FORCE)
+
+endif()
