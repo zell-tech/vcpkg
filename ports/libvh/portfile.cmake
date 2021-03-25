@@ -1,6 +1,6 @@
 vcpkg_from_github(
     OUT_SOURCE_PATH SOURCE_PATH
-    REPO soroush/libvh
+    REPO CADstarGmbH/libvh
     REF v0.1.0
     SHA512 3fafd3d4a4701589e85e9c02daf5b22b01cacb44a6943fbcd4b12ed0fd622b97143c1dc0eb7086a85d58abf88a33a3144e7f08914229e6c389e54fcf4c9e5fe2
     HEAD_REF master

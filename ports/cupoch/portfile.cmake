@@ -1,9 +1,9 @@
 vcpkg_from_github(
     OUT_SOURCE_PATH SOURCE_PATH
-    REPO soroush/cupoch
+    REPO CADstarGmbH/cupoch
     REF 83d22a4750510f1c50242975af35ca00f9085f95
     SHA512 a02216b331707cbddd9a0b89e369d02c9b6ebb50629bc5ac46ea3baccce2aae7f43133278a925f39d0429fd02fe6a5d40bd91e2ed8a7d337e894802642ea3eac
-    HEAD_REF v0.1.3-cleanup
+    HEAD_REF cadstar
 )
 
 # TODO: Add options for conditional build
