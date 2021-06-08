@@ -1,9 +1,9 @@
 vcpkg_from_github(
     OUT_SOURCE_PATH SOURCE_PATH
-    REPO CADstarGmbH/cupoch
-    REF 83d22a4750510f1c50242975af35ca00f9085f95
-    SHA512 a02216b331707cbddd9a0b89e369d02c9b6ebb50629bc5ac46ea3baccce2aae7f43133278a925f39d0429fd02fe6a5d40bd91e2ed8a7d337e894802642ea3eac
-    HEAD_REF cadstar
+    REPO soroush/cupoch
+    REF f5adb60867c9d518ae8d672a90d0410e4a7f5370
+    SHA512  945e4fc72fd9bb7353caa33a6186328ff4b01e9428b43e5cd0fee520e6e1fca0fc874363f6f073706723d8d929271ab73974f5573e204257c95ad59545691289
+    HEAD_REF v0.1.3-cleanup
 )
 
 # TODO: Add options for conditional build
@@ -18,7 +18,13 @@ vcpkg_from_github(
 
 vcpkg_configure_cmake(
     SOURCE_PATH ${SOURCE_PATH}
-)
+    OPTIONS -DSUPPORT_MAXWELL=OFF
+    OPTIONS -DSUPPORT_PASCAL=OFF
+    OPTIONS -DSUPPORT_VOLTA=OFF
+    OPTIONS -DSUPPORT_AMPERE=OFF
+    OPTIONS -DSUPPORT_TURING=ON
+
+    )
 
 vcpkg_install_cmake()
 
