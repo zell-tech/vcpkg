@@ -17,5 +17,3 @@ before_script:
     - ./bootstrap-vcpkg.bat
     - ./vcpkg.exe install eigen3
     - ./vcpkg.exe export eigen3 --7zip 
-
-script: shell
