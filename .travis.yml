@@ -3,6 +3,8 @@ language: cpp
 matrix:
   include:
     - name: windows
+      env:
+      - VCPKG_DEFAULT_TRIPLET=x64-windows
       os: windows
      # MSVC is already installed on Travis, keep it here just in case we need to use it later
      #install:
@@ -14,7 +16,6 @@ before_install:
 before_script:
     - ./bootstrap-vcpkg.bat
     - ./vcpkg.exe install eigen3
-    - ./vcpkg.exe export eigen3
-    
+    - ./vcpkg.exe export eigen3 --7zip 
 
 script: shell
